@@ -1,5 +1,6 @@
+# -------------------------------------
 # On your computer, in your project folder:
-
+# -------------------------------------
 
 git init
 git add .
@@ -7,3 +8,21 @@ git commit -m "Initial commit"
 git branch -M main
 git remote add origin https://github.com/tracyanderson213/rearc-dataquest-bls.git
 git push -u origin main
+
+
+# -------------------------------------
+# Updating Repo after changes
+# -------------------------------------
+
+
+# See what changed
+git status
+
+# Stage the new/modified files
+git add .
+
+# Commit with a message
+git commit -m "My change comments here"
+
+# Push to GitHub
+git push
