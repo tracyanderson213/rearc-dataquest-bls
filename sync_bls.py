@@ -22,7 +22,7 @@ from email.utils import parsedate_to_datetime
 BASE_URL = os.environ.get("BLS_BASE_URL", "https://download.bls.gov/pub/time.series/")
 BUCKET   = os.environ.get("BLS_S3_BUCKET", "dataquest-gov-bls-timeseries")
 PREFIX   = os.environ.get("BLS_S3_PREFIX", "bls")  # all objects live under this prefix
-REGION   = os.environ.get("AWS_REGION", "us-east-1")
+REGION   = os.environ.get("AWS_REGION", "us-east-2")
 
 # polite crawler defaults
 USER_AGENT = os.environ.get(
@@ -40,7 +40,12 @@ logging.basicConfig(
 log = logging.getLogger("bls-sync")
 
 session = requests.Session()
-session.headers.update({"User-Agent": USER_AGENT})
+session.headers.update({
+    "User-Agent": USER_AGENT,
+    "From": os.environ.get("BLS_CONTACT", "tracy.anderson@outlook.com"),
+    "Accept": "*/*",
+    "Connection": "keep-alive",
+})
 
 
 # -----------------------------
@@ -202,6 +207,7 @@ def delete_keys(bucket: str, keys: List[str]) -> None:
 # -----------------------------
 def main():
     log.info("Starting BLS sync: %s -> s3://%s/%s/", BASE_URL, BUCKET, PREFIX)
+    log.info("AWS region: %s  Bucket: %s  Prefix: %s", REGION, BUCKET, PREFIX)
 
     # 1) Discover all files under BASE_URL
     subdirs = list_subdirs(BASE_URL)

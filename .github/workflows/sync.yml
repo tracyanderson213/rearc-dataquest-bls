@@ -1,2 +1,51 @@
 name: Sync BLS to S3
-# ... (rest of the workflow file from my previous message)
+
+on:
+  workflow_dispatch:            # run manually from the Actions tab
+  schedule:
+    - cron: "23 3 * * *"        # run daily at 03:23 UTC (adjust as you like)
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write           # required by aws-actions/configure-aws-credentials if using OIDC
+      contents: read
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # If you prefer OIDC, keep this step and set an IAM Role for GitHub.
+      # If you use static keys, this step also works with secrets.
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}           # OR omit if using role-to-assume
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}   # OR omit if using role-to-assume
+          aws-region: ${{ secrets.AWS_REGION }}
+          # role-to-assume: arn:aws:iam::535697603832:role/<YourGithubOIDCRole>
+          # role-session-name: github-actions-bls-sync
+
+      - name: Run sync
+        env:
+          BLS_S3_BUCKET:  ${{ secrets.BLS_S3_BUCKET }}                  # e.g., dataquest-gov-bls-timeseries
+          BLS_S3_PREFIX:  ${{ secrets.BLS_S3_PREFIX }}                  # e.g., bls
+          BLS_BASE_URL:   "https://download.bls.gov/pub/time.series/"
+          AWS_REGION:     ${{ secrets.AWS_REGION }}
+          BLS_USER_AGENT: "dataquest-bls-sync/1.0 (+https://github.com/tracyanderson213/rearc-dataquest-bls; contact: tracy.anderson@outlook.com)"
+          BLS_CONTACT:    "tracy.anderson@outlook.com"
+          BLS_RATE_LIMIT_RPS: "3"
+        run: |
+          python sync_bls.py
+
